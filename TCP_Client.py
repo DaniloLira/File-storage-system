@@ -1,27 +1,94 @@
 import socket
+import pickle
 
-IP = '192.168.0.6'
-PORTA = 32420
+def entrar_cadastrar():
 
-cliente = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-cliente.connect((IP, PORTA))
+    escolha = ''
+    while escolha != '1' and escolha != '2':
+        escolha = input('Você deseja entrar ou criar uma nova conta ? (1 - entrar, 2- criar conta): ')
 
+    login = input('Digite seu login: ')
+    senha = input('Digite sua senha: ')
 
-while True: # Laço da conexão
-    mensagem = input("Digite sua mensagem: ")
+    resposta = conexao_inicial(escolha,login,senha)
 
-    if not mensagem: print("CONEXÃO ENCERRADA\n"); break
+    while resposta == '1' or resposta == '2':
+        
+        if resposta == '1':
+            print('Login já cadastrado, tente novamente com outro login')
+            login = input('Digite seu login: ')
+
+            resposta = conexao_inicial(escolha,login,senha)
+
+        elif resposta == '2':
+            print('Usuário ou senha incorretos, tente novamente')
+            login = input('Digite seu login: ')
+            senha = input('Digite sua senha: ')
+
+            resposta = conexao_inicial(escolha,login,senha)
+
+    IP = resposta[0]
+    PORTA = resposta[1]
+
+    credenciais = (login,senha)
+    conexao_real(IP, PORTA, credenciais)
+
     
-    else:          
-        cliente.send(mensagem.encode())
+        
+def conexao_inicial(escolha,login,senha):
+    '''
+        Essa funÃ§Ã£o serve para estabelecer conexÃ£o com o servidor
+        de autenticaÃ§Ã£o. Para nÃ£o estabelecer logo a comunicaÃ§Ã£o
+        com o servidor de arquivos, a gente criou um servidor pra
+        receber o login e verificar no banco de dados, caso as cre-
+        denciais estejam armazenadas, o servidor envia uma mensagem
+        contendo a porta do servidor de sistemas de arquivos e ai
+        a outra funÃ§Ã£o Ã© chamada
+    '''
+    
+    IP = '192.168.0.6'
+    PORTA = 32421
 
-        
-        #Recebimento da resposta do servidor à solicitação
-        
-        resposta = cliente.recv(1024) # Definição da quantidade de Bytes recebida.
-        resposta = resposta.decode() # Decodificação da resposta.
+    cliente = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    cliente.connect((IP, PORTA))
+    
+    credenciais = (escolha,login,senha)
+    credenciais = pickle.dumps(credenciais)
+    cliente.send(credenciais)
+    resposta = cliente.recv(1024)
+    cliente.close()
+    resposta = pickle.loads(resposta)
+
+    return resposta
+
+
+def conexao_real(IP, PORTA, credenciais):
+    '''
+        Essa funÃ§Ã£o serve para estabelecer conexÃ£o com o servidor
+        dos arquivos, recebendo a porta vinda do servidor de autenticaÃ§Ã£o
+    '''
+    
+    cliente = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    cliente.connect((IP, PORTA))
+
+    while True: 
+        mensagem = input("Digite sua mensagem: ")
+               
+        cliente.send(pickle.dumps(mensagem))
+
+            
+        #Recebimento da resposta do servidor ÃƒÂ  solicitaÃƒÂ§ÃƒÂ£o
+            
+        resposta = cliente.recv(1024) # DefiniÃƒÂ§ÃƒÂ£o da quantidade de Bytes recebida.
+        resposta = pickle.loads(resposta) # DecodificaÃƒÂ§ÃƒÂ£o da resposta.
         print("[{},{}]: {}".format(IP, PORTA, resposta))
 
-cliente.close()
-    
-        
+        if resposta == 'Conexão encerrada': break
+
+    cliente.close()
+
+
+if __name__ == '__main__': 
+    entrar_cadastrar()
+
+
