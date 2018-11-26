@@ -1,5 +1,18 @@
-import socket
+# coding=UTF-8
 
+import socket
+import pickle
+
+def GET():
+    arq = input('Digite o nome do arquivo desejado: ')
+
+    
+def POST():
+    return 'Oi'
+def PUT():
+    return 'Oi'
+def DELETE():
+    return 'Oi'
 
 IP = '192.168.0.6'
 PORTA = 32420
@@ -22,20 +35,30 @@ while True: # Laço da conexão
         mensagem = conexao.recv(1024) #quantos bits o servidor recebe de uma só vez
         if not mensagem: break
           
-        mensagem = mensagem.decode()
+        mensagem = pickle.loads(mensagem)
         print("[{},{}]: {}".format(cliente[0],cliente[1], mensagem))
 
         if mensagem == 'GET':
-            pass
+            mensagem = GET()
         elif mensagem == 'POST':
-            pass
+            mensagem = POST()
         elif mensagem == 'PUT':
-            pass
+            mensagem = PUT()
         elif mensagem == 'DELETE':
-            pass
+            mensagem = DELETE()
+        elif mensagem == 'CLOSE':
+            mensagem = 'Conexão encerrada'
+        elif mensagem == 'HELP':
+            mensagem = 'Os comandos que você pode utilizar são: GET, POST, PUT, DELETE, CLOSE.'
+        else:
+            mensagem = 'O comando escolhido não é suportado'
 
-        resposta = mensagem.encode()
+        resposta = pickle.dumps(mensagem)
         conexao.send(resposta) # Envio da resposta à solicitação feita
 
+        if mensagem == 'Conexão encerrada':
+            conexao.close()
+            break
+        
     print("[{},{}]: FOI DESCONECTADO".format(cliente[0],cliente[1]))
     conexao.close()
